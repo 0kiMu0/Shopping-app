@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button, Modal, Box, TextField, Typography } from '@mui/material';
 import ItemCard from '../components/ItemCard';
-import '../App.css'; // Uvezujemo CSS
+import '../App.css';
 
 type Item = {
+  id: number;
   name: string;
   description: string;
 };
@@ -11,9 +12,14 @@ type Item = {
 const Dashboard: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
-  const [newItem, setNewItem] = useState<Item>({ name: '', description: '' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [newItem, setNewItem] = useState<Item>({ id: 0, name: '', description: '' });
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setNewItem({ id: Date.now(), name: '', description: '' });
+    setIsEditing(false);
+    setOpen(true);
+  };
   const handleClose = () => setOpen(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,7 +29,21 @@ const Dashboard: React.FC = () => {
   const handleAddItem = () => {
     if (newItem.name.trim() === '' || newItem.description.trim() === '') return;
     setItems([...items, newItem]);
-    setNewItem({ name: '', description: '' });
+    handleClose();
+  };
+
+  const handleDeleteItem = (id: number) => {
+    setItems(items.filter(item => item.id !== id));
+  };
+
+  const handleEditItem = (item: Item) => {
+    setNewItem(item);
+    setIsEditing(true);
+    setOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    setItems(items.map(item => (item.id === newItem.id ? newItem : item)));
     handleClose();
   };
 
@@ -36,15 +56,15 @@ const Dashboard: React.FC = () => {
       </Button>
 
       <div className="item-grid">
-        {items.map((item, index) => (
-          <ItemCard key={index} item={item} />
+        {items.map(item => (
+          <ItemCard key={item.id} item={item} onDelete={handleDeleteItem} onEdit={handleEditItem} />
         ))}
       </div>
 
       <Modal open={open} onClose={handleClose}>
         <Box className="modal-box">
           <Typography variant="h6" component="h2">
-            Add New Item
+            {isEditing ? 'Edit Item' : 'Add New Item'}
           </Typography>
           <TextField
             label="Item Name"
@@ -67,9 +87,9 @@ const Dashboard: React.FC = () => {
             color="primary"
             fullWidth
             sx={{ marginTop: '10px' }}
-            onClick={handleAddItem}
+            onClick={isEditing ? handleSaveEdit : handleAddItem}
           >
-            Add Item
+            {isEditing ? 'Save Changes' : 'Add Item'}
           </Button>
         </Box>
       </Modal>
